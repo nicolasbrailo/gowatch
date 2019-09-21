@@ -92,15 +92,17 @@ public class MainActivity extends WearableActivity implements View.OnClickListen
         super.onDestroy();
         ticker.stopTicking();
 
-        timerService.setTimerStart(timerStart);
-        timerService.setLastMark(lastMarkStart);
-        timerService.setMarkCount(markCount);
+        if (timerService != null) {
+            timerService.setTimerStart(timerStart);
+            timerService.setLastMark(lastMarkStart);
+            timerService.setMarkCount(markCount);
 
-        EditText hist = findViewById(R.id.timer_history);
-        timerService.setHistory(hist.getText().toString());
+            EditText hist = findViewById(R.id.timer_history);
+            timerService.setHistory(hist.getText().toString());
 
-        timerService = null;
-        unbindService(this);
+            timerService = null;
+            unbindService(this);
+        }
     }
 
     @Override
