@@ -124,8 +124,6 @@ public class MainActivity extends WearableActivity implements View.OnClickListen
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
-        Log.e("XXXXXXX", String.valueOf(keyCode));
-        Log.e("XXXX", event.toString());
         switch (keyCode) {
             case KeyEvent.KEYCODE_STEM_1:
             case KeyEvent.KEYCODE_STEM_2:
