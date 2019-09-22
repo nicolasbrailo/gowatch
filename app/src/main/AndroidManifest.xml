@@ -19,6 +19,11 @@
             android:enabled="true"
             android:exported="false"></service>
 
+        <service
+            android:name=".GoWatchBuzzSvc"
+            android:enabled="true"
+            android:exported="false"></service>
+
         <uses-library
             android:name="com.google.android.wearable"
             android:required="true" />

@@ -23,7 +23,12 @@ class Ticker extends Handler {
     }
 
     void start() {
+        stop();
         postDelayed(handle, delayMs);
+    }
+
+    void startWithDifferentDeltaForFirst(long firstDelayMs) {
+        postDelayed(handle, firstDelayMs);
     }
 
     void stop() {

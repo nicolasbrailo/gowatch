@@ -1,13 +1,10 @@
 package com.nicobrailo.gowatch;
 
 import android.content.ComponentName;
-import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.os.VibrationEffect;
-import android.os.Vibrator;
 import android.support.wearable.activity.WearableActivity;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -22,16 +19,13 @@ import java.util.Calendar;
 public class MainActivity extends WearableActivity implements View.OnClickListener, ServiceConnection, Ticker.Callback {
     private static final long UI_REFRESH_MS = 400;
     private static final long BTN_LONG_PRESS_MS = 700;
-    final long BUZZ_DELTA_S = 30;
-    final long BASE_BUZZ_LEN_MS = 100;
-    final long MAX_BUZZ_LEN_MS = 800;
 
     private Instant timerStart;
     private Instant lastMarkStart;
     int markCount = 0;
-    private int buzzCount = 0;
 
     private GoWatchHistorySvc timerService = null;
+    private GoWatchBuzzSvc buzzService = null;
     private Ticker ticker = new Ticker(UI_REFRESH_MS, this);
 
 
@@ -46,37 +40,54 @@ public class MainActivity extends WearableActivity implements View.OnClickListen
         EditText txt = findViewById(R.id.timer_history);
         txt.setText(getString(R.string.bg_service_starting));
 
-        // Start bg service
+        // Start bg services
         final Intent i = new Intent(this, GoWatchHistorySvc.class);
         startService(i);
         bindService(i, this, 0);
 
-        setAmbientEnabled();
-    }
+        final Intent j = new Intent(this, GoWatchBuzzSvc.class);
+        startService(j);
+        bindService(j, this, 0);
 
-    @Override
-    protected void onStart() {
-        super.onStart();
+        setAmbientEnabled();
+
+        ticker.start();
     }
 
     @Override
     public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
-        GoWatchHistorySvc.SvcBinder b = (GoWatchHistorySvc.SvcBinder) iBinder;
-        if (b == null) {
+        if (iBinder.getClass().equals(GoWatchHistorySvc.SvcBinder.class)) {
+            onHistoryServiceConnected((GoWatchHistorySvc.SvcBinder) iBinder);
+        } else if (iBinder.getClass().equals(GoWatchBuzzSvc.SvcBinder.class)) {
+            onBuzzServiceConnected((GoWatchBuzzSvc.SvcBinder) iBinder);
+        } else {
             Log.e(MainActivity.class.getSimpleName(), "Can't start background service");
-            return;
         }
+    }
 
+    void onHistoryServiceConnected(GoWatchHistorySvc.SvcBinder b) {
         timerService = b.getService();
 
         timerStart = timerService.getTimerStart();
         lastMarkStart = timerService.getLastMark();
         markCount = timerService.getMarkCount();
 
+        if (buzzService != null) {
+            buzzService.resetWithLastMarkTime(timerStart);
+        }
+
         EditText txt = findViewById(R.id.timer_history);
         txt.setText(timerService.getHistory());
+    }
 
-        ticker.start();
+    void onBuzzServiceConnected(GoWatchBuzzSvc.SvcBinder b) {
+        buzzService = b.getService();
+
+        if (timerService != null) {
+            buzzService.resetWithLastMarkTime(timerStart);
+        } else {
+            buzzService.reset();
+        }
     }
 
     @Override
@@ -95,16 +106,22 @@ public class MainActivity extends WearableActivity implements View.OnClickListen
             timerService = null;
             unbindService(this);
         }
+
+        if (buzzService != null) {
+            buzzService.stop();
+        }
     }
 
     @Override
     public void onServiceDisconnected(ComponentName componentName) {
         timerService = null;
+        buzzService = null;
         ticker.stop();
     }
 
     private void resetTimer() {
         timerService.reset();
+        buzzService.reset();
         timerStart = timerService.getTimerStart();
         lastMarkStart = timerService.getLastMark();
         markCount = timerService.getMarkCount();
@@ -144,9 +161,10 @@ public class MainActivity extends WearableActivity implements View.OnClickListen
 
         // Update UI
         markCount += 1;
-        buzzCount = 0;
         EditText hist = findViewById(R.id.timer_history);
         hist.append(getString(R.string.timer_history_format, markCount, d.minutes, d.seconds, d.millis));
+
+        buzzService.reset();
     }
 
     @Override
@@ -172,17 +190,5 @@ public class MainActivity extends WearableActivity implements View.OnClickListen
         final Delta d2 = new Delta(Calendar.getInstance().getTime().toInstant(), lastMarkStart);
         TextView t2 = findViewById(R.id.current_mark);
         t2.setText(getString(R.string.current_mark_format, d2.minutes, d2.seconds, d.millis));
-
-        // TODO: Need to save buzzes to svc too
-        // TODO: Seems to drift on bg, move to svc entirely?
-        final int expected_buzzes = (int) (d2.seconds_raw / BUZZ_DELTA_S);
-        if (expected_buzzes > buzzCount) {
-            Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
-            long buzz_length_ms = (BASE_BUZZ_LEN_MS * expected_buzzes) / 2;
-            if (buzz_length_ms > MAX_BUZZ_LEN_MS) buzz_length_ms = MAX_BUZZ_LEN_MS;
-            final long[] BUZZ_PATTERN = {0, buzz_length_ms};
-            v.vibrate(VibrationEffect.createWaveform(BUZZ_PATTERN, -1));
-            buzzCount = expected_buzzes;
-        }
     }
 }
