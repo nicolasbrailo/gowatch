@@ -17,7 +17,6 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.Calendar;
 
@@ -111,10 +110,8 @@ public class MainActivity extends WearableActivity implements View.OnClickListen
         ticker.stopTicking();
     }
 
-    private void onShutdownRequested() {
-        timerService.shutdown();
-        onDestroy();
-        finish();
+    private void resetTimer() {
+        timerService.reset();
     }
 
     @Override
@@ -128,7 +125,7 @@ public class MainActivity extends WearableActivity implements View.OnClickListen
             case KeyEvent.KEYCODE_STEM_1:
             case KeyEvent.KEYCODE_STEM_2:
                 if (event.getEventTime() - event.getDownTime() > BTN_CLOSE_HOLD_TIME_MS) {
-                    onShutdownRequested();
+                    resetTimer();
                 } else {
                     markTime();
                 }
@@ -213,22 +210,6 @@ public class MainActivity extends WearableActivity implements View.OnClickListen
                 self.onTick();
                 sendEmptyMessageDelayed(0, delayMs);
             }
-        }
-    }
-
-    class Delta {
-        final long minutes;
-        final long seconds;
-        final int millis;
-
-        final long seconds_raw;
-
-        Delta(Instant end, Instant start) {
-            final Duration delta = Duration.between(start, end);
-            this.minutes = delta.getSeconds() / 60;
-            this.seconds = delta.getSeconds() % 60;
-            this.millis = delta.getNano() / (int) 1e6;
-            this.seconds_raw = delta.getSeconds();
         }
     }
 }

@@ -4,27 +4,20 @@ import android.app.Service;
 import android.content.Intent;
 import android.os.Binder;
 import android.os.IBinder;
+import android.util.Log;
 
 import java.time.Instant;
 import java.util.Calendar;
 
 public class GoWatchTimerSvc extends Service {
 
+    private static final long MAX_TIME_HISTORY_RETAIN_SEC = 60 * 15;
+
     private Instant timerStart = null;
     private Instant lastMarkStart = null;
     private int markCount = 0;
     private String history =  null;
-    private boolean needsReinit = true;
 
-    private void initAll() {
-        if (needsReinit) {
-            timerStart = Calendar.getInstance().getTime().toInstant();
-            lastMarkStart = Calendar.getInstance().getTime().toInstant();
-            markCount = 0;
-            history = "";
-            needsReinit = false;
-        }
-    }
 
     public Instant getTimerStart() {
         return timerStart;
@@ -50,8 +43,11 @@ public class GoWatchTimerSvc extends Service {
         this.history = history;
     }
 
-    public void shutdown() {
-        needsReinit = true;
+    public void reset() {
+        timerStart = Calendar.getInstance().getTime().toInstant();
+        lastMarkStart = Calendar.getInstance().getTime().toInstant();
+        markCount = 0;
+        history = "";
     }
 
     public int getMarkCount() {
@@ -73,11 +69,19 @@ public class GoWatchTimerSvc extends Service {
 
     @Override
     public void onCreate() {
+        reset();
     }
 
     @Override
     public IBinder onBind(Intent intent) {
-        initAll();
+        // If the UI spent too long in the bg, just start from zero
+        final Instant now = Calendar.getInstance().getTime().toInstant();
+        Delta last_init = new Delta(getTimerStart(), now);
+        if (last_init.seconds_raw > MAX_TIME_HISTORY_RETAIN_SEC) {
+            Log.i("GoWatch", "Long time elapsed: resetting timer");
+            reset();
+        }
+
         return svcBinder;
     }
 
