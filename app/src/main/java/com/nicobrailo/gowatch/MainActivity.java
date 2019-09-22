@@ -24,7 +24,7 @@ import java.util.Calendar;
 public class MainActivity extends WearableActivity implements View.OnClickListener, ServiceConnection {
 
     private static final long UI_REFRESH_MS = 400;
-    private static final long BTN_CLOSE_HOLD_TIME_MS = 700;
+    private static final long BTN_LONG_PRESS_MS = 700;
     final long BUZZ_DELTA_S = 30;
     final long BASE_BUZZ_LEN_MS = 100;
     final long MAX_BUZZ_LEN_MS = 800;
@@ -42,10 +42,7 @@ public class MainActivity extends WearableActivity implements View.OnClickListen
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        final View v = getLayoutInflater().inflate(R.layout.activity_main, null);
-        setContentView(v);
-        // setContentView(R.layout.activity_main);
-        v.setOnClickListener(this);
+        setContentView(R.layout.activity_main);
         findViewById(R.id.main_activity).setOnClickListener(this);
         findViewById(R.id.current_time).setOnClickListener(this);
 
@@ -57,8 +54,7 @@ public class MainActivity extends WearableActivity implements View.OnClickListen
         startService(i);
         bindService(i, this, 0);
 
-        // TODO What's this?
-        // setAmbientEnabled();
+        setAmbientEnabled();
     }
 
     @Override
@@ -112,6 +108,10 @@ public class MainActivity extends WearableActivity implements View.OnClickListen
 
     private void resetTimer() {
         timerService.reset();
+        timerStart = timerService.getTimerStart();
+        lastMarkStart = timerService.getLastMark();
+        markCount = timerService.getMarkCount();
+        ((EditText)findViewById(R.id.timer_history)).setText("");
     }
 
     @Override
@@ -124,7 +124,7 @@ public class MainActivity extends WearableActivity implements View.OnClickListen
         switch (keyCode) {
             case KeyEvent.KEYCODE_STEM_1:
             case KeyEvent.KEYCODE_STEM_2:
-                if (event.getEventTime() - event.getDownTime() > BTN_CLOSE_HOLD_TIME_MS) {
+                if (event.getEventTime() - event.getDownTime() > BTN_LONG_PRESS_MS) {
                     resetTimer();
                 } else {
                     markTime();
