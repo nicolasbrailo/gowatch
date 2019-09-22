@@ -34,7 +34,7 @@ public class MainActivity extends WearableActivity implements View.OnClickListen
     int markCount = 0;
     private int buzzCount = 0;
 
-    private GoWatchTimerSvc timerService = null;
+    private GoWatchHistorySvc timerService = null;
     private Ticker ticker;
 
 
@@ -50,7 +50,7 @@ public class MainActivity extends WearableActivity implements View.OnClickListen
         txt.setText(getString(R.string.bg_service_starting));
 
         // Start bg service
-        final Intent i = new Intent(this, GoWatchTimerSvc.class);
+        final Intent i = new Intent(this, GoWatchHistorySvc.class);
         startService(i);
         bindService(i, this, 0);
 
@@ -64,7 +64,7 @@ public class MainActivity extends WearableActivity implements View.OnClickListen
 
     @Override
     public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
-        GoWatchTimerSvc.SvcBinder b = (GoWatchTimerSvc.SvcBinder) iBinder;
+        GoWatchHistorySvc.SvcBinder b = (GoWatchHistorySvc.SvcBinder) iBinder;
         if (b == null) {
             Log.e(MainActivity.class.getSimpleName(), "Can't start background service");
             return;

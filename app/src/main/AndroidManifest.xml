@@ -15,7 +15,7 @@
         android:theme="@android:style/Theme.DeviceDefault">
 
         <service
-            android:name=".GoWatchTimerSvc"
+            android:name=".GoWatchHistorySvc"
             android:enabled="true"
             android:exported="false"></service>
 

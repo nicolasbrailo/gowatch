@@ -9,7 +9,7 @@ import android.util.Log;
 import java.time.Instant;
 import java.util.Calendar;
 
-public class GoWatchTimerSvc extends Service {
+public class GoWatchHistorySvc extends Service {
 
     private static final long MAX_TIME_HISTORY_RETAIN_SEC = 60 * 15;
 
@@ -60,8 +60,8 @@ public class GoWatchTimerSvc extends Service {
 
 
     class SvcBinder extends Binder {
-        GoWatchTimerSvc getService() {
-            return GoWatchTimerSvc.this;
+        GoWatchHistorySvc getService() {
+            return GoWatchHistorySvc.this;
         }
     }
 
