@@ -5,9 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
-import android.os.Handler;
 import android.os.IBinder;
-import android.os.Message;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.support.wearable.activity.WearableActivity;
@@ -21,8 +19,7 @@ import java.time.Instant;
 import java.util.Calendar;
 
 
-public class MainActivity extends WearableActivity implements View.OnClickListener, ServiceConnection {
-
+public class MainActivity extends WearableActivity implements View.OnClickListener, ServiceConnection, Ticker.Callback {
     private static final long UI_REFRESH_MS = 400;
     private static final long BTN_LONG_PRESS_MS = 700;
     final long BUZZ_DELTA_S = 30;
@@ -35,7 +32,7 @@ public class MainActivity extends WearableActivity implements View.OnClickListen
     private int buzzCount = 0;
 
     private GoWatchHistorySvc timerService = null;
-    private Ticker ticker;
+    private Ticker ticker = new Ticker(UI_REFRESH_MS, this);
 
 
     @Override
@@ -79,13 +76,13 @@ public class MainActivity extends WearableActivity implements View.OnClickListen
         EditText txt = findViewById(R.id.timer_history);
         txt.setText(timerService.getHistory());
 
-        ticker = new Ticker(UI_REFRESH_MS, this);
+        ticker.start();
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-        ticker.stopTicking();
+        ticker.stop();
 
         if (timerService != null) {
             timerService.setTimerStart(timerStart);
@@ -103,7 +100,7 @@ public class MainActivity extends WearableActivity implements View.OnClickListen
     @Override
     public void onServiceDisconnected(ComponentName componentName) {
         timerService = null;
-        ticker.stopTicking();
+        ticker.stop();
     }
 
     private void resetTimer() {
@@ -152,7 +149,8 @@ public class MainActivity extends WearableActivity implements View.OnClickListen
         hist.append(getString(R.string.timer_history_format, markCount, d.minutes, d.seconds, d.millis));
     }
 
-    private void onTick() {
+    @Override
+    public void onTick() {
         updateClock();
         updateTimer();
     }
@@ -185,31 +183,6 @@ public class MainActivity extends WearableActivity implements View.OnClickListen
             final long[] BUZZ_PATTERN = {0, buzz_length_ms};
             v.vibrate(VibrationEffect.createWaveform(BUZZ_PATTERN, -1));
             buzzCount = expected_buzzes;
-        }
-    }
-
-
-    static class Ticker extends Handler {
-        final long delayMs;
-        private final MainActivity self;
-        boolean stop = false;
-
-        Ticker(long delayMs, MainActivity self) {
-            this.delayMs = delayMs;
-            this.self = self;
-            this.handleMessage(null);
-        }
-
-        void stopTicking() {
-            stop = true;
-        }
-
-        @Override
-        public void handleMessage(Message message) {
-            if (!stop) {
-                self.onTick();
-                sendEmptyMessageDelayed(0, delayMs);
-            }
         }
     }
 }
