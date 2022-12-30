@@ -26,7 +26,7 @@ public class MainActivity extends WearableActivity implements View.OnClickListen
 
     private GoWatchHistorySvc timerService = null;
     private GoWatchBuzzSvc buzzService = null;
-    private Ticker ticker = new Ticker(UI_REFRESH_MS, this);
+    private final Ticker ticker = new Ticker(UI_REFRESH_MS, this);
 
 
     @Override
